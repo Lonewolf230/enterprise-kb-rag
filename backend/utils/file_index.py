@@ -9,12 +9,16 @@ from pinecone import ServerlessSpec
 from services.pinecone import pc
 from services.openai import openai_client
 import whisper
+import pytesseract
+from pdf2image import convert_from_path
 
-def index_file(index_name:str,file) -> None:
+
+def index_file(index_name:str,file,key:str) -> None:
     
     ext = file.filename.rsplit('.', 1)[1].lower()
     tmp_fd, path = tempfile.mkstemp(suffix=f".{ext}")
     os.close(tmp_fd)  
+    file.stream.seek(0)
     file.save(path)
     print("Saved temp file:", path)
 
@@ -35,11 +39,13 @@ def index_file(index_name:str,file) -> None:
             continue
 
         embedding=generate_embeddings(chunk)
+        print(file.filename)
         vectors.append({
             'id': f"{file.filename}_chunk_{i}",
             'values': embedding,
             'metadata': {
                 'filename': file.filename,
+                'filekey': key,
                 'chunk_index': i,
                 'text': chunk
             }
@@ -51,11 +57,42 @@ def index_file(index_name:str,file) -> None:
     return {"status": "success","chunks_indexed": len(vectors),"filename": file.filename}
 
 
+def index_image_caption(index_name:str,filename:str,caption:str,key:str)->None:
+    chunks=chunk_text(caption)
+    vectors=[]
+    for i,chunk in enumerate(chunks):
+        if not chunk.strip():
+            continue
+
+        embedding=generate_embeddings(chunk)
+        vectors.append({
+            'id': f"{filename}_caption_chunk_{i}",
+            'values': embedding,
+            'metadata': {
+                'filename': filename,
+                'filekey': key,
+                'chunk_index': i,
+                'text': chunk
+            }
+        })
+
+    index=get_index(index_name)
+    if vectors:
+        index.upsert(vectors=vectors)
+    return {"status": "success","chunks_indexed": len(vectors),"filename": filename}
+
+
 def extract_text_from_pdf(path:str) -> str:
     text=""
     with fitz.open(path) as doc:
         for page in doc:
             text+=page.get_text("text")
+    print("Fitz text: ",text)
+    if not text.strip():
+        pages= convert_from_path(path)
+        for page in pages:
+            text+=pytesseract.image_to_string(page)
+    print("Tesseract text: ",text)
     return text
 
 def extract_text_from_docx(path:str) -> str:
@@ -104,3 +141,4 @@ def transcribe_audio(file_path:str)->str:
     model=whisper.load_model("small")
     result=model.transcribe(file_path)
     return result["text"]
+

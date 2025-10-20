@@ -13,7 +13,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ isOpen, onClose }) =>
 
   if (!isOpen) return null;
 
-  const allowedFormats = ['pdf', 'txt', 'docx', 'jpg', 'png', 'jpeg', 'mp3', 'wav'];
+  const allowedFormats = ['pdf', 'txt', 'docx', 'mp3', 'wav'];
   const MAX_FILE_SIZE = 20 * 1024 * 1024; 
 
   const handleDrag = (e: React.DragEvent) => {
@@ -98,7 +98,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ isOpen, onClose }) =>
               <input
                 type="file"
                 multiple
-                accept=".pdf,.txt,.docx,.jpg,.png,.jpeg,.mp3,.wav"
+                accept=".pdf,.txt,.docx,.mp3,.wav"
                 onChange={handleFileInput}
                 style={{ display: 'none' }}
               />

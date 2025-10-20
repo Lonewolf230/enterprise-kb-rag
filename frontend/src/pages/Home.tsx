@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import './Home.css';
-import {Send,CloudUpload,LogOut,User} from 'lucide-react'
+import {Send,CloudUpload,LogOut,User,Image} from 'lucide-react'
 import FileUploadModal from '../components/FileUploadModal';
+import ImageUploadModal from '../components/ImageUploadModal';
 
 interface Group {
   id: number;
@@ -16,6 +17,7 @@ const Home: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [messageInput, setMessageInput] = useState('');
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isImageUploadModalOpen, setIsImageUploadModalOpen] = useState(false);
 
   const groups: Group[] = [
     { id: 1, name: 'Team Alpha', lastMessage: 'Great work on the project!', time: '10:30 AM', unread: 2 },
@@ -45,6 +47,10 @@ const Home: React.FC = () => {
     setIsUploadModalOpen(true);
   }
 
+  const handleUploadImages = () => {
+    setIsImageUploadModalOpen(true);
+  }
+
   const currentGroup = groups.find(g => g.id === selectedGroup);
 
   return (
@@ -52,6 +58,11 @@ const Home: React.FC = () => {
       <FileUploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
+      />
+
+      <ImageUploadModal
+        isOpen={isImageUploadModalOpen}
+        onClose={() => setIsImageUploadModalOpen(false)}
       />
 
       <nav className="navbar">
@@ -128,6 +139,9 @@ const Home: React.FC = () => {
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   className="message-input"
                 />
+                <button onClick={handleUploadImages} className='upload-btn' title="Upload Image">
+                  <Image size={20} />
+                </button>
                 <button onClick={handleUploadFiles} className='upload-btn'>
                   <CloudUpload size={20} />
                 </button>

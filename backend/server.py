@@ -1,8 +1,11 @@
 from flask import Flask
 from controllers.file_upload_controller import file_handling_bp
+from controllers.image_captioning_controller import image_captioning_bp
 
 app=Flask(__name__)
 app.register_blueprint(file_handling_bp, url_prefix='/files')
+app.register_blueprint(image_captioning_bp, url_prefix='/images')
+
 
 @app.route('/')
 def home():
