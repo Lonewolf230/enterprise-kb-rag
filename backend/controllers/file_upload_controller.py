@@ -1,6 +1,11 @@
 from flask import Blueprint,request,jsonify
 from utils.file_index import index_file,index_image_caption
 from utils.upload_to_bucket import upload_to_bucket
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+SUPABASE_BUCKET=os.getenv("SUPABASE_BUCKET")
 
 file_handling_bp=Blueprint("file_handling",__name__)
 
@@ -31,9 +36,14 @@ def upload_files():
             try:
                 print(file.filename)
                 file_bytes=file.read()
-                res=upload_to_bucket(bucket_name="files_rag",file_obj=file_bytes,file_name=file.filename)
+                res=upload_to_bucket(bucket_name=SUPABASE_BUCKET,file_obj=file_bytes,file_name=file.filename,index_name=index_name)
                 print(res)
                 filekey=res.full_path
+
+                if filekey.startswith(f"{SUPABASE_BUCKET}"):
+                    filekey=filekey[len(f"{SUPABASE_BUCKET}/"):]
+
+                print("File key:",filekey)
                 index_file(index_name=index_name,file=file,key=filekey)
                 results.append({"filename": file.filename, "status": "File uploaded and indexed successfully", "filekey": filekey})
                 print("File indexed successfully.")
@@ -64,7 +74,7 @@ def upload_images():
             try:
                 print(file.filename)
                 img_bytes=file.read()
-                res=upload_to_bucket(bucket_name="files_rag",file_obj=img_bytes,file_name=file.filename)
+                res=upload_to_bucket(bucket_name="files_rag",file_obj=img_bytes,file_name=file.filename,index_name=index_name)
                 filekey=res.full_path
                 index_image_caption(index_name=index_name,filename=file.filename,caption=captions[i],key=filekey)
                 results.append({"filename": file.filename, "status": "Image uploaded and indexed successfully"})

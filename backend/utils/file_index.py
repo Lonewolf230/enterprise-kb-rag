@@ -137,6 +137,7 @@ def get_index(index_name:str,dimension:int=1536):
         )
     return pc.Index(index_name)
 
+
 def transcribe_audio(file_path:str)->str:
     model=whisper.load_model("small")
     result=model.transcribe(file_path)
