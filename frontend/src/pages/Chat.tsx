@@ -36,15 +36,16 @@ const Chat: React.FC = () => {
   useEffect(() => {
     console.log(groupId);
     
-    const socket = io(import.meta.env.BACKEND_SERVER_URL || 'http://localhost:5000');
+    const socket = io(import.meta.env.BACKEND_SERVER_URL || 'http://localhost:8000',{
+      transports: ['websocket','polling']
+    });
     socketRef.current = socket;
 
     socket.on('connect', () => {
       console.log('Connected to server via WebSocket');
-      socket.emit('join_room', { room: currentGroup?.name });
     });
 
-    socket.on('server_message', (data: any) => {
+    socket.on('message', (data: any) => {
       console.log('Received message:', data);
       setMessages((prevMessages) => [
         ...prevMessages,
@@ -59,14 +60,31 @@ const Chat: React.FC = () => {
     });
 
     return () => {
-      socket.disconnect();
+      // socket.disconnect();
+      socket.emit("leave_room",{room:currentGroup?.id});
+      console.log('Disconnected from group:', currentGroup?.id);
     };
 
-  }, [groupId, currentGroup?.name]);
+  }, []);
+
+  useEffect(()=>{
+    if(!socketRef.current) return;
+    if(!currentGroup?.name) return;
+    console.log('Joining group:', currentGroup.id);
+    socketRef.current.emit("join_room",{room:currentGroup.id});
+
+    return ()=>{
+      if(socketRef.current && socketRef.current.connected){
+        console.log('Leaving group:', currentGroup.id);
+        socketRef.current.emit("leave_room",{room:currentGroup.id});
+      }
+    }
+
+  },[currentGroup?.id])
 
   const handleSendMessage = () => {
     if (messageInput.trim() && socketRef.current) {
-      socketRef.current.emit('client_message', { message: messageInput });
+      socketRef.current.emit('message', { message: messageInput,sender:'You', room: currentGroup?.id });
       setMessages(prevMessages => [
         ...prevMessages,
         {
