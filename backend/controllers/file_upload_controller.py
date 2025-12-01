@@ -1,13 +1,15 @@
-from flask import Blueprint,request,jsonify
+# from flask import Blueprint,request,jsonify
+from fastapi import APIRouter,UploadFile,File,Form,HTTPException,status
 from utils.file_index import index_file,index_image_caption
 from utils.upload_to_bucket import upload_to_bucket
 import os
+from typing import List
 from dotenv import load_dotenv
 load_dotenv()
 
 SUPABASE_BUCKET=os.getenv("SUPABASE_BUCKET")
 
-file_handling_bp=Blueprint("file_handling",__name__)
+router=APIRouter(prefix="/files",tags=["file_handling"])
 
 allowed_extensions={"txt","pdf","mp3","mp4","wav","m4a","docx","doc"}
 
@@ -20,23 +22,31 @@ def allowed_image_file(filename):
 
 
 
-@file_handling_bp.route('/upload',methods=['POST'])
-def upload_files():
-    files= request.files.getlist('files')
-    index_name=request.form.get('index_name','general')
+@router.post('/upload',status_code=status.HTTP_200_OK)
+async def upload_files(
+    files: List[UploadFile]=File(...),
+    index_name: str = Form('general')
+):
+
     if not files:
-        return jsonify({"error": "No file part in the request"}), 400
+        raise HTTPException(status_code=400,detail="No files part in the request")
+    
     results=[]
-    for file in files:
-        if file.filename == '':
-            return jsonify({"error": "No selected file"}), 400
-        if not allowed_file(file.filename):
-            return jsonify({"error": f"File type of {file.filename} is not allowed"}), 400
+    for upload_file in files:
+
+        if upload_file.filename == '':
+            results.append({"filename": upload_file.filename, "status": "No selected file"})
+            continue
+
+        if not allowed_file(upload_file.filename):
+            results.append({"filename": upload_file.filename, "status": "File type not allowed"})
+            continue
+
         else:
             try:
-                print(file.filename)
-                file_bytes=file.read()
-                res=upload_to_bucket(bucket_name=SUPABASE_BUCKET,file_obj=file_bytes,file_name=file.filename,index_name=index_name)
+                print(upload_file.filename)
+                file_bytes=upload_file.read()
+                res=upload_to_bucket(bucket_name=SUPABASE_BUCKET,file_obj=file_bytes,file_name=upload_file.filename,index_name=index_name)
                 print(res)
                 filekey=res.full_path
 
@@ -44,32 +54,37 @@ def upload_files():
                     filekey=filekey[len(f"{SUPABASE_BUCKET}/"):]
 
                 print("File key:",filekey)
-                index_file(index_name=index_name,file=file,key=filekey)
-                results.append({"filename": file.filename, "status": "File uploaded and indexed successfully", "filekey": filekey})
+                index_file(index_name=index_name,file=upload_file,key=filekey)
+                results.append({"filename": upload_file.filename, "status": "File uploaded and indexed successfully", "filekey": filekey})
                 print("File indexed successfully.")
             
             except Exception as e:
-                results.append({"filename": file.filename, "status": f"Failed to index file: {str(e)}"})
-                print(f"Error indexing file {file.filename}: {str(e)}")
+                results.append({"filename": upload_file.filename, "status": f"Failed to index file: {str(e)}"})
+                print(f"Error indexing file {upload_file.filename}: {str(e)}")
 
-    return jsonify({"results": results}), 200
-
-
+    return {"results": results}
 
 
-@file_handling_bp.route('/upload_images',methods=['POST'])
-def upload_images():
-    files= request.files.getlist('images')
-    captions=request.form.getlist('captions')
-    index_name=request.form.get('index_name','general')
+@router.post('/upload_images',status_code=status.HTTP_200_OK)
+def upload_images(
+    files:List[UploadFile]=File(...),
+    captions:List[str]=Form(...),
+    index_name:str=Form('general')
+):
+
     if not files:
-        return jsonify({"error": "No image part in the request"}), 400
+        return {"error": "No image part in the request"}, 400
     results=[]
     for i,file in enumerate(files):
+
         if file.filename == '':
-            return jsonify({"error": "No selected image"}), 400
+            results.append({"filename": file.filename, "status": "No selected file"})
+            continue
+
         if not allowed_image_file(file.filename):
-            return jsonify({"error": f"File type of {file.filename} is not allowed"}), 400
+            results.append({"filename": file.filename, "status": "Image file type not allowed"})
+            continue
+
         else:
             try:
                 print(file.filename)
@@ -84,10 +99,9 @@ def upload_images():
                 results.append({"filename": file.filename, "status": f"Failed to index image: {str(e)}"})
                 print(f"Error indexing image {file.filename}: {str(e)}")
 
-    return jsonify({"results": results}), 200
+    return {"results": results}
 
 
-
-@file_handling_bp.route('/get',methods=['GET'])
-def get_file():
-    return jsonify({"message": "File retrieval endpoint"}), 200
+# @router.get('/get')
+# def get_file():
+#     return {"message": "File retrieval endpoint"}, 200

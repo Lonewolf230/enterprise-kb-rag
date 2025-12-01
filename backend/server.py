@@ -1,43 +1,17 @@
-from flask import Flask
-from controllers.file_upload_controller import file_handling_bp
-from controllers.image_captioning_controller import image_captioning_bp
-from controllers.retrieval_controller import retrieval_bp
-from flask_socketio import SocketIO,emit
 
-app=Flask(__name__)
-app.register_blueprint(file_handling_bp, url_prefix='/files')
-app.register_blueprint(image_captioning_bp, url_prefix='/images')
-app.register_blueprint(retrieval_bp, url_prefix='/retrieve')
+from controllers.auth_controller import router as auth_router
+from controllers.file_upload_controller import router as file_upload_router
+from controllers.image_captioning_controller import router as image_captioning_router
+from fastapi import FastAPI
+app=FastAPI()
 
-socketio=SocketIO(app,cors_allowed_origins="*")
-
-
-@app.route('/')
+@app.get('/')
 def home():
-    return "Welcome to the Home Page!"
+    return {"message":"API is working"}
 
-@socketio.on('connect')
-def handle_connect():
-    print('Client connected')
-    emit('response', {'message': 'Connected to server'})
+app.include_router(auth_router)
+app.include_router(file_upload_router)
+app.include_router(image_captioning_router)
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    print('Client disconnected')
-    emit('response', {'message': 'Disconnected from server'})
-
-@socketio.on('client_message')
-def handle_message(data):
-    print('Received message:', data)
-    emit('server_message', {'message': data['message'],'group': data['message']}, broadcast=True,include_self=False)
-
-@socketio.on('join_room')
-def handle_join_room(data):
-    room=data['room']
-    if room:
-        print(f'Client joined room: {room}')
-        emit('server_message', {'message': f'Joined room: {room}'})
-
-
-if __name__ == '__main__':
-    socketio.run(app, debug=True,port=5000)
+if __name__=='__main__':
+    print("Server is running")

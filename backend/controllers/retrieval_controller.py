@@ -1,24 +1,29 @@
-from flask import Blueprint,request,jsonify
+from fastapi import APIRouter
 from utils.file_index import generate_embeddings,get_index
 from utils.retrieval_utils import prepare_query,generate_prompt,generate_response,generate_presigned_urls
 import os
 from dotenv import load_dotenv
+from pydantic import BaseModel
 load_dotenv()
 
 SUPABASE_BUCKET=os.getenv("SUPABASE_BUCKET")
-retrieval_bp=Blueprint('retrieval', __name__)
+router=APIRouter(prefix="/retrieve",tags=["retrieval"])
 
+class QueryRequest(BaseModel):
+    query: str
+    index_name: str
 
-@retrieval_bp.route('/query', methods=['POST'])
-def query_kb():
-    data=request.get_json()
-    query=data.get('query')
-    index_name=data.get('index_name')
+@router.post('/query')
+def query_kb(body: QueryRequest):
+    query=body.query
+    index_name=body.index_name
 
     if not query:
-        return jsonify({"error":"Query is required"}),400
+        return {"error": "Query is required"}, 400
+
     if not index_name:
-        return jsonify({"error":"Index name is required"}),400
+        return {"error": "Index name is required"}, 400
+    
     print("Entering retrieval pipeline")
     
     query_embedding=generate_embeddings(query)
@@ -49,7 +54,12 @@ def query_kb():
         object_keys=list({hit['filekey'] for hit in hits}),
         expiration_time=3600
     )
-    return jsonify({"query":query,"response":response,"presigned_urls":presigned_urls})
+    return {
+        "query": query,
+        "response": response,
+        "sources": hits,
+        "presigned_urls": presigned_urls
+    }
 
 
 
