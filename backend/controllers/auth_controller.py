@@ -7,7 +7,6 @@ router=APIRouter(prefix="/auth",tags=["auth"])
 class UserRequest(BaseModel):
     email:str
     password:str
-    role: str | None = None
     name: str | None = None
 
 @router.post('/signup',status_code=status.HTTP_201_CREATED)
@@ -22,13 +21,15 @@ def signup(body: UserRequest):
             "password": body.password,
             'options':{
                 'data': {
-                    'role': body.role,
+                    'username': body.email.split('@')[0],
                     'name': body.name
                 }
             }
         })
+        print(response.user)
         return {"message": "User registered successfully", "user": response.user.user_metadata}
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500,detail=str(e))
 
 @router.post('/login',status_code=status.HTTP_200_OK)

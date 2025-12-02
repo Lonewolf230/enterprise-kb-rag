@@ -83,6 +83,9 @@ body {
 .search-container {
   padding: 16px;
   border-bottom: 1px solid #2a2a2a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .search-input {
@@ -94,6 +97,7 @@ body {
   color: #e0e0e0;
   font-size: 14px;
   outline: none;
+  padding-right: 10px;
 }
 
 .search-input:focus {
@@ -103,6 +107,20 @@ body {
 .search-input::placeholder {
   color: #666;
 }
+
+.add-group-icon {
+  margin-left: 12px;
+  cursor: pointer;
+  padding: 5px;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.add-group-icon:hover {
+  background-color: #4a9eff;
+  border-radius: 5px;
+  border: none;
+}
+
 
 .groups-list {
   flex: 1;
