@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useOutletContext } from 'react-router-dom';
 import { Send, CloudUpload, Image } from 'lucide-react';
-import { io } from 'socket.io-client';
 import FileUploadModal from '../components/FileUploadModal';
 import ImageUploadModal from '../components/ImageUploadModal';
 import './Home.css';
@@ -30,73 +29,7 @@ const Chat: React.FC = () => {
     { id: 3, sender: 'Bob', text: 'Great work on the project!', time: '10:30 AM', isOwn: false },
   ]);
 
-  const socketRef = useRef<any>(null);
-  const currentGroup = groups.find(g => g.id === Number(groupId));
-
-  useEffect(() => {
-    console.log(groupId);
-    
-    const socket = io(import.meta.env.BACKEND_SERVER_URL || 'http://localhost:8000',{
-      transports: ['websocket','polling']
-    });
-    socketRef.current = socket;
-
-    socket.on('connect', () => {
-      console.log('Connected to server via WebSocket');
-    });
-
-    socket.on('message', (data: any) => {
-      console.log('Received message:', data);
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          id: prevMessages.length + 1,
-          sender: 'Server',
-          text: data.message,
-          time: new Date().toLocaleTimeString(),
-          isOwn: false
-        }
-      ]);
-    });
-
-    return () => {
-      // socket.disconnect();
-      socket.emit("leave_room",{room:currentGroup?.id});
-      console.log('Disconnected from group:', currentGroup?.id);
-    };
-
-  }, []);
-
-  useEffect(()=>{
-    if(!socketRef.current) return;
-    if(!currentGroup?.name) return;
-    console.log('Joining group:', currentGroup.id);
-    socketRef.current.emit("join_room",{room:currentGroup.id});
-
-    return ()=>{
-      if(socketRef.current && socketRef.current.connected){
-        console.log('Leaving group:', currentGroup.id);
-        socketRef.current.emit("leave_room",{room:currentGroup.id});
-      }
-    }
-
-  },[currentGroup?.id])
-
   const handleSendMessage = () => {
-    if (messageInput.trim() && socketRef.current) {
-      socketRef.current.emit('message', { message: messageInput,sender:'You', room: currentGroup?.id });
-      setMessages(prevMessages => [
-        ...prevMessages,
-        {
-          id: prevMessages.length + 1,
-          sender: 'You',
-          text: messageInput,
-          time: new Date().toLocaleTimeString(),
-          isOwn: true
-        }
-      ]);
-      setMessageInput('');
-    }
   };
 
   const handleUploadFiles = () => {
@@ -107,13 +40,13 @@ const Chat: React.FC = () => {
     setIsImageUploadModalOpen(true);
   };
 
-  if (!currentGroup) {
-    return (
-      <div className="no-chat-selected">
-        <p>Group not found</p>
-      </div>
-    );
-  }
+  // if (!currentGroup) {
+  //   return (
+  //     <div className="no-chat-selected">
+  //       <p>Group not found</p>
+  //     </div>
+  //   );
+  // }
 
   return (
     <>
@@ -128,7 +61,7 @@ const Chat: React.FC = () => {
       />
 
       <div className="chat-header">
-        <h2>{currentGroup.name}</h2>
+        {/* <h2>{currentGroup.name}</h2> */}
       </div>
 
       <div className="messages-container">
