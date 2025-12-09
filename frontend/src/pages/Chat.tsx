@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useOutletContext } from 'react-router-dom';
-import { Send, CloudUpload, Image } from 'lucide-react';
+import { Send, CloudUpload, Image,ArrowRight } from 'lucide-react';
 import FileUploadModal from '../components/FileUploadModal';
 import ImageUploadModal from '../components/ImageUploadModal';
 import './Home.css';
@@ -28,7 +28,7 @@ const Chat: React.FC = () => {
     { id: 2, sender: 'You', text: 'Hi Alice! How are things?', time: '10:27 AM', isOwn: true },
     { id: 3, sender: 'Bob', text: 'Great work on the project!', time: '10:30 AM', isOwn: false },
   ]);
-
+  const currentGroup = groups.find(group => group.id.toString() === groupId);
   const handleSendMessage = () => {
   };
 
@@ -61,7 +61,8 @@ const Chat: React.FC = () => {
       />
 
       <div className="chat-header">
-        {/* <h2>{currentGroup.name}</h2> */}
+        <h2>{currentGroup?.name}</h2>
+        <ArrowRight size={15} />
       </div>
 
       <div className="messages-container">

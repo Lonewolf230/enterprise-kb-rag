@@ -98,7 +98,7 @@ const Home: React.FC = () => {
         </aside>
 
         <main className="chat-area">
-          <Outlet context={{ chats }} />
+          <Outlet context={{groups: chats }} />
         </main>
 
         <CreateChat isOpen={isCreateChatOpen} onClose={() => setIsCreateChatOpen(false)} onCreateChat={(chatData) => {

@@ -1,6 +1,6 @@
 from services.gemini import client as gemini_client
 from google.genai.types import Part,Content
-from fastapi import APIRouter,UploadFile,File,Form,HTTPException,status
+from fastapi import APIRouter,UploadFile,File,HTTPException,status
 
 router=APIRouter(prefix="/images",tags=["image_captioning"])
 

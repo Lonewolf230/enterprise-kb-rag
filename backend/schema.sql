@@ -13,10 +13,15 @@ CREATE TABLE public.conversations (
   is_archived  boolean NOT NULL DEFAULT false
 );
 
+ALTER TABLE public.conversations
+  ADD COLUMN IF NOT EXISTS description text,
+  ADD COLUMN IF NOT EXISTS owner_id uuid REFERENCES auth.users(id),
+  ADD COLUMN IF NOT EXISTS avatar_url text;
+
+
 CREATE TABLE public.conversation_members (
-  id                    uuid PRIMARY KEY,
+  user_id                    uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   conversation_id       uuid NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
-  user_id               uuid   NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   role                  member_role NOT NULL DEFAULT 'member',
   joined_at             timestamptz NOT NULL DEFAULT now(),
   is_muted              boolean NOT NULL DEFAULT false,
@@ -24,6 +29,7 @@ CREATE TABLE public.conversation_members (
   last_read_at          timestamptz,
   UNIQUE (conversation_id, user_id)
 );
+
 
 CREATE INDEX idx_conv_members_user
   ON public.conversation_members(user_id);
@@ -96,9 +102,27 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.handle_user_deletion()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=public
+AS $$
+BEGIN
+  DELETE FROM public.profiles WHERE id=OLD.id;
+  RETURN OLD;
+END;
+$$;
+
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 
 CREATE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users
 FOR EACH ROW
 EXECUTE PROCEDURE public.create_profile_for_user();
+
+CREATE TRIGGER on_auth_user_deleted
+AFTER DELETE ON auth.users
+FOR EACH ROW
+EXECUTE PROCEDURE public.handle_user_deletion();
+

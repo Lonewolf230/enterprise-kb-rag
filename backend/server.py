@@ -3,6 +3,7 @@ from controllers.auth_controller import router as auth_router
 from controllers.file_upload_controller import router as file_upload_router
 from controllers.image_captioning_controller import router as image_captioning_router
 from controllers.user_controller import router as user_router
+from controllers.convo_controller import router as convo_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import socketio
@@ -61,6 +62,7 @@ app.include_router(auth_router)
 app.include_router(file_upload_router)
 app.include_router(image_captioning_router)
 app.include_router(user_router)
+app.include_router(convo_router)
 
 socket_app=ASGIApp(sio,other_asgi_app=app)
 

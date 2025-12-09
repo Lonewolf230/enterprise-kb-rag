@@ -27,6 +27,7 @@ def signup(body: UserRequest):
             }
         })
         print(response.user)
+
         return {"message": "User registered successfully", "user": response.user.user_metadata}
     except Exception as e:
         print(e)
@@ -92,7 +93,9 @@ def get_user():
 @router.delete('/delete_user', status_code=status.HTTP_200_OK)
 def delete_user():
     try:
-        supabase.auth.admin.delete_user()
+        supabase.auth.admin.delete_user(
+            #get user id via middleware or other means
+        )
         return {"message": "User deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=500,detail=str(e))
